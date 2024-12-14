@@ -112,7 +112,7 @@ export default function EditContract() {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel>Title</FormLabel>
                     <FormControl>
                       <Input
                         id="title"
