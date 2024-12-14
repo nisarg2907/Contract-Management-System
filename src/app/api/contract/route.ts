@@ -47,7 +47,14 @@ async function handleDatabaseError(err: unknown): Promise<NextResponse<APIRespon
     );
 }
 
-export async function GET(): Promise<NextResponse<APIResponse>> {
+export async function GET(req: NextRequest): Promise<NextResponse<APIResponse>> {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (id) {
+        return GET_BY_ID(req);
+    }
+
     try {
         const contracts = await db.contract.findMany({
             select: {
@@ -71,8 +78,63 @@ export async function GET(): Promise<NextResponse<APIResponse>> {
     }
 }
 
+export async function GET_BY_ID(req: NextRequest): Promise<NextResponse<APIResponse>> {
+    try {
+        const { searchParams } = new URL(req.url);
+        const id = searchParams.get('id');
+
+        if (!id) {
+            return NextResponse.json(
+                errorResponseSchema.parse({
+                    success: false,
+                    error: {
+                        message: 'ID is required',
+                        code: 'VALIDATION_ERROR'
+                    }
+                }),
+                { status: 400 }
+            );
+        }
+
+        const contract = await db.contract.findUnique({
+            where: { id: id as string },
+            select: {
+                id: true,
+                clientName: true,
+                title: true,
+                description: true,
+                status: true,
+                type: true
+            }
+        });
+
+        if (!contract) {
+            return NextResponse.json(
+                errorResponseSchema.parse({
+                    success: false,
+                    error: {
+                        message: 'Contract not found',
+                        code: 'NOT_FOUND'
+                    }
+                }),
+                { status: 404 }
+            );
+        }
+
+        return NextResponse.json(
+            successResponseSchema.parse({
+                success: true,
+                data: { contract }
+            })
+        );
+    } catch (err) {
+        return handleDatabaseError(err);
+    }
+}
+
 export async function POST(req: NextRequest): Promise<NextResponse<APIResponse>> {
     try {
+      
         const body = await req.json();
         const parsedData = await validateSchema(CreateNewContractSchema, body);
 
@@ -104,6 +166,8 @@ export async function POST(req: NextRequest): Promise<NextResponse<APIResponse>>
 
 export async function PUT(req: NextRequest): Promise<NextResponse<APIResponse>> {
     try {
+        const { searchParams } = new URL(req.url);
+        const id = searchParams.get('id') as string;
         const body = await req.json();
         const parsedData = await validateSchema(UpdateContractSchema, body);
         if (!parsedData) {
@@ -119,7 +183,7 @@ export async function PUT(req: NextRequest): Promise<NextResponse<APIResponse>> 
             );
         }
         const updatedContract = await db.contract.update({
-            where: { id: parsedData.id },
+            where: { id },
             data: parsedData,
         });
         return NextResponse.json(
@@ -135,10 +199,13 @@ export async function PUT(req: NextRequest): Promise<NextResponse<APIResponse>> 
 
 export async function DELETE(req: NextRequest): Promise<NextResponse<APIResponse>> {
     try {
+        console.debug("DELETE request received", { url: req.url });
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
+        console.debug("Extracted ID from request", { id });
         
         if (!id) {
+            console.error("Invalid ID provided", { id });
             return NextResponse.json(
                 errorResponseSchema.parse({
                     success: false,
@@ -157,7 +224,7 @@ export async function DELETE(req: NextRequest): Promise<NextResponse<APIResponse
                 success: true,
                 data: {}
             }),
-            { status: 204 }
+            { status: 200 }
         );
     } catch (err) {
         return handleDatabaseError(err);

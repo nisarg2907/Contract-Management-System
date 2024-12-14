@@ -19,9 +19,8 @@ import {
 } from '@/components/ui/form';
 import { CombinedContractSchema } from '@/types/contract';
 import axios from 'axios';
-import { ContractStatus,ContractType } from '@prisma/client';
+import { ContractStatus, ContractType } from '@prisma/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
 
 type FormData = z.infer<typeof CombinedContractSchema>;
 
@@ -29,22 +28,22 @@ export default function EditContract() {
   const id = useParams()?.id as string;
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<FormData | null>(null);
+  const [data, setData] = useState<FormData>({
+    id:'',
+    title: '',
+    description: '',
+    clientName: '',
+    status: ContractStatus.DRAFT,
+    type: ContractType.EMPLOYMENT,
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(CombinedContractSchema),
-    defaultValues: data || {
-      title: '',
-      description: null,
-      clientName: '',
-      status: ContractStatus.DRAFT,
-      type: ContractType.EMPLOYMENT,
-    },
+    defaultValues: data,
   });
 
   useEffect(() => {
- 
     const fetchData = async () => {
       if (!id) {
         toast.error('404 - Page Not Found');
@@ -52,18 +51,19 @@ export default function EditContract() {
         return;
       }
 
-
       if (id === 'new') {
         setLoading(false);
         return;
       }
 
       try {
-        const response = await axios.get(`/api/contracts/${id}`);
-        const validatedData = CombinedContractSchema.parse(response.data);
-        setData(validatedData);
-        form.reset(validatedData);
-      } catch  {
+        const response = await axios.get(`/api/contract?id=${id}`);
+        console.log("response",response.data.data)
+        
+        const validatedData = CombinedContractSchema.parse(response.data.data.contract);
+        setData({...validatedData,id});
+        form.reset({...validatedData,id});
+      } catch {
         toast.error('Failed to load data.');
       } finally {
         setLoading(false);
@@ -76,14 +76,14 @@ export default function EditContract() {
   const onSubmit = async (formData: FormData) => {
     setIsSubmitting(true);
     try {
-      const endpoint = id === 'new' ? '/api/contracts' : `/api/contracts/${id}`;
+      const endpoint = id === 'new' ? '/api/contract' : `/api/contract?id=${id}`;
       const method = id === 'new' ? 'POST' : 'PUT';
-      await axios({ method, url: endpoint, data: formData });
+      await axios({ method, url: endpoint, data: id ? { ...formData, id } : formData });
 
       toast.success('Form submitted successfully');
-      router.push('/admin/contracts');
-    } catch  {
-      toast.error('Failed to submit form.');
+      router.push('/admin');
+    } catch{
+      toast.error('Failed to submit Contract.');
     } finally {
       setIsSubmitting(false);
     }
@@ -109,14 +109,14 @@ export default function EditContract() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
-                name="name"
+                name="title"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Name</FormLabel>
                     <FormControl>
                       <Input
-                        id="name"
-                        placeholder="Enter contract name"
+                        id="title"
+                        placeholder="Enter contract title"
                         {...field}
                         disabled={isSubmitting}
                       />

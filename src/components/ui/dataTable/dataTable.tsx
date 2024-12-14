@@ -30,7 +30,7 @@ import {
 import { DataTablePagination } from "../dataTable/tablePagination";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { exportTableToCSV } from "@/lib/export"
+import { exportTableToCSV } from "@/lib/export";
 import { Download, RotateCw } from "lucide-react";
 import { DataTableViewOptions } from "./dataTableViewOptions";
 import { usePagination } from "@/hooks/use-pagination";
@@ -72,7 +72,7 @@ export function DataTable<T>({
     } = usePagination();
 
     const table = useReactTable({
-        data,
+        data: data ?? [], // Ensure data is not undefined
         columns,
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
@@ -164,7 +164,7 @@ export function DataTable<T>({
                         ))}
                     </TableHeader>
                     <TableBody>
-                        {table.getRowModel().rows?.length ? (
+                        {table.getRowModel().rows.length > 0 ? (
                             table.getRowModel().rows.map((row: Row<T>) => (
                                 <TableRow
                                     key={row.id}

@@ -22,7 +22,8 @@ export default function Contracts() {
     const fetchContracts = async () => {
       try {
         const response = await axios.get("/api/contract");
-        setData(response.data);
+        console.log("response",response.data)
+        setData(response.data.data.contracts);
       } catch  {
         setError("Error fetching contracts");
         toast.error("Error fetching contracts");
@@ -36,7 +37,7 @@ export default function Contracts() {
 
   const deleteContract = async (id: string) => {
     try {
-      await axios.delete(`/api/contract/${id}`);
+      await axios.delete(`/api/contract?id=${id}`);
       toast.success(`Contract deleted successfully`);
       setData((prevData) => prevData.filter((contract) => contract.id !== id));
     } catch  {
@@ -86,7 +87,7 @@ export default function Contracts() {
           },
           {
             name: "Edit",
-            onClick: () => router.push(`/admin/modify/contracts/${contract.id}`),
+            onClick: () => router.push(`/admin/modify/${contract.id}`),
           },
         ];
         return <DropdownActionsMenu actions={actions} />;

@@ -18,13 +18,16 @@ export async function validateSchema<T extends ZodSchema>(
     data: unknown,
     res: NextResponse<APIResponse> | undefined = undefined,
 ): Promise<z.infer<T> | undefined> {
+    console.debug("Starting schema validation", { schema, data });
     const parsedData = await schema.safeParseAsync(data);
     if (parsedData.success === false) {
+        console.error("Schema validation failed", { error: parsedData.error, data });
         if (!res) {
             throw parsedData.error;
         }
         invalidArgunmentsErrorResponse(res, parsedData.error, data);
         return undefined;
     }
+    console.debug("Schema validation succeeded", { parsedData: parsedData.data });
     return parsedData.data;
 }
