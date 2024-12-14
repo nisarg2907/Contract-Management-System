@@ -25,9 +25,12 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIo) => {
       path: path,
     });
     res.socket.server.io = io;
+  } else {
+    console.log("Socket.IO server already initialized");
   }
 
   res.end();
+  console.log("API response ended");
 };
 
 export default ioHandler;

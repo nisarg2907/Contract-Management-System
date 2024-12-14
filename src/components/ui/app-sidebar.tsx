@@ -16,7 +16,7 @@ import {
 import { useState, useEffect } from 'react';
 import { cn } from "@/lib/utils"
 import { usePathname } from 'next/navigation';
-
+import { SocketIndicator } from "@/components/ui/show-notification";
 
 type SidebarItem = {
   title: string;
@@ -25,8 +25,8 @@ type SidebarItem = {
 };
 
 const masterList: SidebarItem[] = [
-  { title: "Updates", url: "/liveUpdates", icon: FileText },
-  { title: "Manage Contracts", url: "/", icon: Library }
+  { title: "Updates", url: "/admin/liveUpdates", icon: FileText },
+  { title: "Manage Contracts", url: "/admin", icon: Library }
 ];
 
 export function AppSidebar() {
@@ -36,8 +36,6 @@ export function AppSidebar() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-   
 
   if (!isMounted) return null;
 
@@ -59,6 +57,7 @@ export function AppSidebar() {
                 >
                   <masterItem.icon />
                   <span>{masterItem.title}</span>
+                  {masterItem.url === "/admin/liveUpdates" && <SocketIndicator />}
                 </Link>
               </div>
             ))}

@@ -2,18 +2,18 @@
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 /** Custom Functions */
-import { errorResponse, successResponse } from "@/schema/genericModel";
-import { NextApiResponse } from "next";
+import { APIResponse } from "@/types/genericModel";
+import { NextResponse } from "next/server";
 
 type ErrorFunctionCallBack = {
     handleUniqueCb?: (
-        res: NextApiResponse<errorResponse>,
+        res: NextResponse<APIResponse>,
         err: PrismaClientKnownRequestError,
     ) => PromiseLike<void> | void;
 };
 
 async function handlePrismaKnownError(
-    res: NextApiResponse<errorResponse>,
+    res: NextResponse<APIResponse>,
     err: PrismaClientKnownRequestError,
     handleUniqueCb: ErrorFunctionCallBack["handleUniqueCb"] = undefined,
 ): Promise<boolean> {
@@ -25,7 +25,7 @@ async function handlePrismaKnownError(
 }
 
 export async function handlePrismaError(
-    res: NextApiResponse<errorResponse>,
+    res: NextResponse<APIResponse>,
     err: unknown,
     cb: ErrorFunctionCallBack,
 ): Promise<boolean> {
@@ -40,67 +40,73 @@ export async function handlePrismaError(
 }
 
 export async function internalServerErrorResponse(
-    res: NextApiResponse<errorResponse>,
+    res: NextResponse<APIResponse>,
     err: unknown = undefined,
     cb: ErrorFunctionCallBack,
     meta: unknown = undefined,
 ) {
     const prismaRes = await handlePrismaError(res, err, cb);
     if (!prismaRes) {
-        return res.status(500).json({
+        return new NextResponse(JSON.stringify({
             success: false,
-            errorMessage: "Internal Server Error, please try again",
-            cause: err instanceof Error ? err.name : "",
-            meta,
-        });
+            error: {
+                message: "Internal Server Error, please try again",
+                cause: err instanceof Error ? err.name : "",
+            },
+            meta: meta ?? ""
+        }), { status: 500 });
     }
 }
 
 export function genericuniqueErrorResponse(
-    res: NextApiResponse<errorResponse>,
+    res: NextResponse<APIResponse>,
     errorMessage: string,
-    unique: errorResponse["unique"],
+    unique: Record<string, unknown>,
     statusCode: number = 400,
 ) {
-    return res
-        .status(statusCode)
-        .json({ success: false, errorMessage, unique });
+    return new NextResponse(JSON.stringify({ success: false, error: { message: errorMessage }, meta: { unique } }), { status: statusCode });
 }
 
-export function notFoundErrorResponse(res: NextApiResponse<errorResponse>) {
-    return res.status(404).json({
+export function notFoundErrorResponse() {
+    return new NextResponse(JSON.stringify({
         success: false,
-        errorMessage: "Request resource is not available",
-    });
+        error: {
+            message: "Request resource is not available",
+        },
+    }), { status: 404 });
 }
 
 export function invalidArgunmentsErrorResponse(
-    res: NextApiResponse<errorResponse>,
+    res: NextResponse<APIResponse>,
     err: Error | undefined,
-    meta: unknown,
+    meta?: unknown,
 ) {
-    return res.status(400).json({
+    return new NextResponse(JSON.stringify({
         success: false,
-        errorMessage: "Invalid Arguements provided",
-        cause: err?.message,
-        meta,
-    });
+        error: {
+            message: "Invalid Arguments provided",
+            cause: err?.message,
+        },
+        meta: meta ?? ""
+    }), { status: 400 });
 }
 
 export function successfulResponse(
-    res: NextApiResponse<successResponse>,
-    data: successResponse["data"],
+    res: NextResponse<APIResponse>,
+    data: Record<string, unknown>,
     statusCode: number = 200,
 ) {
-    return res.status(statusCode).json({ success: true, data });
+    return new NextResponse(JSON.stringify({ success: true, data }), { status: statusCode });
 }
 
 export function unauthorizedErrorResponse(
-    res: NextApiResponse<errorResponse>,
+    res: NextResponse<APIResponse>,
     errorMessage: string = "Unauthorized access",
 ) {
-    return res.status(401).json({
+    return new NextResponse(JSON.stringify({
         success: false,
-        errorMessage,
-    });
+        error: {
+            message: errorMessage,
+        },
+    }), { status: 401 });
 }
