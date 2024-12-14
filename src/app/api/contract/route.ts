@@ -50,9 +50,11 @@ async function handleDatabaseError(err: unknown): Promise<NextResponse<APIRespon
 export async function GET(req: NextRequest): Promise<NextResponse<APIResponse>> {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
+    const pageIndex = parseInt(searchParams.get('pageIndex') || '0', 10);
+    const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
+
     try {
-    if (id) {
-       
+    if (id) {   
         const contract = await db.contract.findUnique({
             where: { id: id as string },
             select: {
@@ -86,8 +88,12 @@ export async function GET(req: NextRequest): Promise<NextResponse<APIResponse>> 
         );
     }
 
+        const totalContracts = await db.contract.count();
+
 
         const contracts = await db.contract.findMany({
+            skip: pageIndex * pageSize,
+            take: pageSize,
             select: {
                 id: true,
                 clientName: true,
@@ -101,7 +107,10 @@ export async function GET(req: NextRequest): Promise<NextResponse<APIResponse>> 
         return NextResponse.json(
             successResponseSchema.parse({
                 success: true,
-                data: { contracts: contracts.length === 0 ? [] : contracts }
+                data: { 
+                    contracts: contracts.length === 0 ? [] : contracts,
+                    totalPages: Math.ceil(totalContracts / pageSize)
+                }
             })
         );
     } catch (err) {
@@ -230,13 +239,10 @@ export async function PUT(req: NextRequest): Promise<NextResponse<APIResponse>> 
 
 export async function DELETE(req: NextRequest): Promise<NextResponse<APIResponse>> {
     try {
-        console.debug("DELETE request received", { url: req.url });
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
-        console.debug("Extracted ID from request", { id });
         
         if (!id) {
-            console.error("Invalid ID provided", { id });
             return NextResponse.json(
                 errorResponseSchema.parse({
                     success: false,

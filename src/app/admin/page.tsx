@@ -1,5 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
+
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/dataTable/dataTable";
 import { SearchInputGlobalFilter } from "@/components/ui/dataTable/SearchInputGlobalFilter";
@@ -9,22 +11,29 @@ import DropdownActionsMenu from "@/components/ui/dropdownActionMenus";
 import LoadingScreen from "@/components/ui/loadingScreen";
 import { DataTableColumnHeader } from "@/components/ui/dataTable/columnHeader";
 import { toast } from "react-toastify";
-import axios from "axios";
 import { ContractDataTableRow } from "@/types/contract";
+import { usePagination } from "@/hooks/use-pagination";
 
 export default function Contracts() {
   const [data, setData] = useState<ContractDataTableRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { pagination, onPaginationChange } = usePagination();
+  const [totalPageCount, setTotalPageCount] = useState<number>(0);
 
   useEffect(() => {
     const fetchContracts = async () => {
       try {
-        const response = await axios.get("/api/contract");
-        console.log("response",response.data)
+        const response = await axios.get("/api/contract", {
+          params: {
+            pageIndex: pagination.pageIndex,
+            pageSize: pagination.pageSize,
+          },
+        });
         setData(response.data.data.contracts);
-      } catch  {
+        setTotalPageCount(response.data.data.totalPages);
+      } catch {
         setError("Error fetching contracts");
         toast.error("Error fetching contracts");
       } finally {
@@ -33,14 +42,14 @@ export default function Contracts() {
     };
 
     fetchContracts();
-  }, []);
+  }, [pagination.pageIndex, pagination.pageSize]);
 
   const deleteContract = async (id: string) => {
     try {
       await axios.delete(`/api/contract?id=${id}`);
       toast.success(`Contract deleted successfully`);
       setData((prevData) => prevData.filter((contract) => contract.id !== id));
-    } catch  {
+    } catch {
       toast.error("Error deleting contract");
     }
   };
@@ -122,6 +131,9 @@ export default function Contracts() {
             </Button>
           </SearchInputGlobalFilter>
         )}
+        pagination={pagination}
+        onPaginationChange={onPaginationChange}
+        totalRows={totalPageCount * pagination.pageSize}
       />
     </div>
   );
