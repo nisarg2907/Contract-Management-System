@@ -1,3 +1,4 @@
+
 import "./globals.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -8,6 +9,7 @@ export const metadata = {
   title: "Contract management",
   description: "Contract Management System",
 };
+import SessionProvider from "@/components/ui/auth/SessionWrapper";
 
 export default function RootLayout({
   children,
@@ -17,10 +19,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <SessionProvider>
         <NextTopLoader showSpinner={false} color="#29d" crawlSpeed={200} />
         <SocketProvider>
           <SidebarProvider>
-            <div className="flex h-full">
+            <div className="flex h-full w-full">
               <main
                 className={`flex-1 h-full overflow-auto transition-all duration-300`}
               >
@@ -30,6 +33,7 @@ export default function RootLayout({
             </div>
           </SidebarProvider>
         </SocketProvider>
+        </SessionProvider>
       </body>
     </html>
   );

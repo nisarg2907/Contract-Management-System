@@ -8,6 +8,31 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model User {
+  id          String       @id @default(uuid())
+  name        String
+  email       String       @unique
+  password    String
+  statuses    ContractStatus[]  // Array of statuses the user wants to be notified about
+  notifications Notification[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Notification {
+  id          String      @id @default(uuid())
+  userId      String
+  contractId  String
+  status      ContractStatus
+  message     String
+  isRead      Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user        User        @relation(fields: [userId], references: [id])
+  contract    Contract    @relation(fields: [contractId], references: [id])
+}
+
 model Contract {
   id          String   @id @default(uuid())
   title       String
@@ -15,6 +40,7 @@ model Contract {
   clientName  String
   status      ContractStatus @default(DRAFT)
   type        ContractType
+  notifications Notification[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

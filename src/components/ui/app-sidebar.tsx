@@ -1,6 +1,7 @@
 "use client"
 import { 
-  FileText, Library ,User2
+  ChevronUp,
+  FileText, Library, User2
 } from "lucide-react"
 
 import Link from 'next/link';
@@ -10,13 +11,18 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarMenu,
-  SidebarFooter
+  SidebarFooter,
+  SidebarMenuItem,
+  SidebarMenuButton
 } from "@/components/ui/sidebar"
 
 import { useState, useEffect } from 'react';
 import { cn } from "@/lib/utils"
 import { usePathname } from 'next/navigation';
 import { SocketIndicator } from "@/components/ui/show-notification";
+import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "./dropDownMenu";
+import { useSession, signOut } from "next-auth/react";
 
 type SidebarItem = {
   title: string;
@@ -26,18 +32,25 @@ type SidebarItem = {
 
 const masterList: SidebarItem[] = [
   { title: "Updates", url: "/admin/liveUpdates", icon: FileText },
-  { title: "Manage Contracts", url: "/admin", icon: Library }
+  { title: "Manage Contracts", url: "/admin", icon: Library },
+  { title: "Manage Users", url: "/admin/user", icon: User2 }
 ];
 
 export function AppSidebar() {
   const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
+  const { data: session } = useSession();
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
   if (!isMounted) return null;
+
+  const handleSignOut = () => {
+    signOut();
+
+  };
 
   return (
     <Sidebar>
@@ -66,10 +79,26 @@ export function AppSidebar() {
       </SidebarContent>
       
       <SidebarFooter>
-        <div className="p-4 flex items-center gap-2">
-          <User2 />
-          <span>Contract Admin</span>
-        </div>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton>
+                  <User2 /> {session?.user?.name ?? ""}
+                  <ChevronUp className="ml-auto" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                side="top"
+                className="w-[--radix-popper-anchor-width]"
+              >
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <span>Sign out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   );
