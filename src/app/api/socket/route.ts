@@ -1,49 +1,69 @@
-import { Server } from 'socket.io';
-import { Server as HTTPServer } from 'http';
-// import { PrismaClient } from '@prisma/client';
+import { Server } from "socket.io";
+import { NextRequest, NextResponse } from "next/server";
 
-// const prisma = new PrismaClient();
+let io: Server | null = null;
 
-// Socket server configuration
-export function configureSocketServer(server: HTTPServer) {
-  const io = new Server(server, {
-    path: '/api/socket',
-    cors: {
-      origin: [
-        'http://localhost:3000', 
-        process.env.NEXT_PUBLIC_APP_URL || ''
-      ],
-      methods: ['GET', 'POST']
-    }
-  });
+export async function GET(_request: NextRequest) {
+  // Check if socket is already initialized
+  console.log("request",_request)
+  if (io) {
+    return NextResponse.json({ message: "Socket already initialized" });
+  }
 
-  // Socket connection handler
-  io.on('connection', (socket) => {
-    console.log('A user connected');
-
-    // Contract-related events
-    socket.on('contract:create', async (contractData) => {
-      try {
-        // Broadcast to all connected clients
-        io.emit('contract:created', contractData);
-      } catch (error) {
-        console.error('Contract creation error:', error);
+  try {
+    // Import http server dynamically to avoid SSR issues
+    const { createServer } = await import("http");
+    const httpServer = createServer();
+    
+    // Initialize Socket.IO
+    io = new Server(httpServer, {
+      path: "/api/socket",
+      addTrailingSlash: false,
+      cors: {
+        origin: [
+          "http://localhost:3000",
+          "http://localhost:3001",
+        ],
+        methods: ["GET", "POST"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+        credentials: true
       }
     });
 
-    socket.on('contract:update', async (contractData) => {
-      try {
-        io.emit('contract:updated', contractData);
-      } catch (error) {
-        console.error('Contract update error:', error);
-      }
+    // Setup socket event listeners
+    io.on("connection", (socket) => {
+      console.log("New client connected:", socket.id);
+
+      socket.on("join_room", (roomName) => {
+        socket.join(roomName);
+        console.log(`User ${socket.id} joined room ${roomName}`);
+      });
+
+      socket.on("leave_room", (roomName) => {
+        socket.leave(roomName);
+        console.log(`User ${socket.id} left room ${roomName}`);
+      });
+
+      socket.on("custom_event", (data) => {
+        io?.emit("event_response", { 
+          message: "Event received", 
+          data 
+        });
+      });
+
+      socket.on("disconnect", () => {
+        console.log("Client disconnected:", socket.id);
+      });
     });
 
-    // Disconnect handler
-    socket.on('disconnect', () => {
-      console.log('A user disconnected');
+    return NextResponse.json({ 
+      message: "Socket.IO initialized successfully" 
     });
-  });
-
-  return io;
+  } catch (error) {
+    console.error("Socket.IO initialization error:", error);
+    return NextResponse.json({ 
+      error: "Failed to initialize Socket.IO", 
+      details: error instanceof Error ? error.message : "Unknown error" 
+    }, { status: 500 });
+  }
 }

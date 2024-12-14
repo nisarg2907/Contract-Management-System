@@ -1,19 +1,29 @@
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
+model Contract {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  clientName  String
+  status      ContractStatus @default(DRAFT)
+  type        ContractType
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 enum ContractStatus {
   DRAFT
-  PENDING
-  ACTIVE
   FINALIZED
-  EXPIRED
-  TERMINATED
+  IN_REVIEW
+  CANCELED
 }
 
 enum ContractType {
@@ -23,80 +33,4 @@ enum ContractType {
   NDA
   LEASE
   OTHER
-}
-
-model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  password  String
-  name      String?
-  createdContracts Contract[] @relation("ContractCreator")
-  updatedContracts Contract[] @relation("ContractUpdater")
-}
-
-model Contract {
-  id              String          @id @default(cuid())
-  contractNumber  String          @unique
-  title           String
-
-  // Client Details
-  clientName      String
-  clientEmail     String?
-  clientPhone     String?
-  clientAddress   String?
-  
-  // Contract Specifics
-  status          ContractStatus  @default(DRAFT)
-  type            ContractType
-  
-  // Dates
-  startDate       DateTime
-  endDate         DateTime
-  renewalDate     DateTime?
-  signedDate      DateTime?
-  
-  totalValue      Decimal?        @db.Decimal(15, 2)
-  paymentTerms    String?
-  currency        String          @default("USD")
-  
-  fileMetadata    FileMetadata?
-  
-  createdBy       String
-  creator         User            @relation("ContractCreator", fields: [createdBy], references: [id])
-  
-  updatedBy       String
-  lastUpdatedBy   User            @relation("ContractUpdater", fields: [updatedBy], references: [id])
-  
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  version         Int             @default(1)
-  
-  tags            String[]
-  notes           String?
-  isActive        Boolean         @default(true)
-  
-  signingParties  Json?
-}
-
-model FileMetadata {
-  id            String   @id @default(cuid())
-  contractId    String   @unique
-  contract      Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  
-  filename      String
-  fileType      String
-  fileSize      Int
-  storagePath   String
-  uploadedAt    DateTime @default(now())
-}
-
-model AuditLog {
-  id            String   @id @default(cuid())
-  entityType    String
-  entityId      String
-  action        String
-  changedBy     String
-  changedAt     DateTime @default(now())
-  oldValue      Json?
-  newValue      Json?
 }
