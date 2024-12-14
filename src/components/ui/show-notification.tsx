@@ -23,26 +23,17 @@ export const SocketIndicator = () => {
   }, [socket]);
 
   if (!isConnected) {
-    return (
-      <Badge 
-        variant="outline" 
-        className="bg-yellow-600 text-white border-none"
-      >
-       No New Updates
-      </Badge>
-    )
+    return <></>
   }
 
   return (
-    <Badge 
-      variant="outline" 
-      className={`bg-emerald-600 text-white border-none ${hasNewUpdates ? "animate-pulse" : ""}`}
-    >
-      {hasNewUpdates ? (
+    hasNewUpdates && (
+      <Badge 
+        variant="outline" 
+        className={`bg-emerald-600 text-white border-none ${hasNewUpdates ? "animate-pulse" : ""}`}
+      >
         <span className="animate-pulse">New Updates</span>
-      ) : (
-        <span className="dot">No New Updates</span>
-      )}
-    </Badge>
+      </Badge>
+    )
   )
 }
