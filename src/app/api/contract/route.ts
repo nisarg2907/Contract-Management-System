@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
+import { Server as ServerIO } from "socket.io";
 /** Custom Types and Schemas */
 import { APIResponse, successResponseSchema, errorResponseSchema } from "@/types/genericModel";
 import {
@@ -118,60 +118,6 @@ export async function GET(req: NextRequest): Promise<NextResponse<APIResponse>> 
     }
 }
 
-// export async function getById(req: NextRequest): Promise<NextResponse<APIResponse>> {
-//     try {
-//         const { searchParams } = new URL(req.url);
-//         const id = searchParams.get('id');
-
-//         if (!id) {
-//             return NextResponse.json(
-//                 errorResponseSchema.parse({
-//                     success: false,
-//                     error: {
-//                         message: 'ID is required',
-//                         code: 'VALIDATION_ERROR'
-//                     }
-//                 }),
-//                 { status: 400 }
-//             );
-//         }
-
-//         const contract = await db.contract.findUnique({
-//             where: { id: id as string },
-//             select: {
-//                 id: true,
-//                 clientName: true,
-//                 title: true,
-//                 description: true,
-//                 status: true,
-//                 type: true
-//             }
-//         });
-
-//         if (!contract) {
-//             return NextResponse.json(
-//                 errorResponseSchema.parse({
-//                     success: false,
-//                     error: {
-//                         message: 'Contract not found',
-//                         code: 'NOT_FOUND'
-//                     }
-//                 }),
-//                 { status: 404 }
-//             );
-//         }
-
-//         return NextResponse.json(
-//             successResponseSchema.parse({
-//                 success: true,
-//                 data: { contract }
-//             })
-//         );
-//     } catch (err) {
-//         return handleDatabaseError(err);
-//     }
-// }
-
 export async function POST(req: NextRequest): Promise<NextResponse<APIResponse>> {
     try {
       
@@ -226,6 +172,14 @@ export async function PUT(req: NextRequest): Promise<NextResponse<APIResponse>> 
             where: { id },
             data: parsedData,
         });
+        if ((globalThis as unknown as { io: ServerIO }).io) {
+            (globalThis as unknown as { io: ServerIO }).io.emit('contractUpdated', {
+              contractId: id,
+              status: parsedData.status,
+            });
+          } else {
+            console.error('Socket.IO instance is not initialized');
+          }
         return NextResponse.json(
             successResponseSchema.parse({
                 success: true,
