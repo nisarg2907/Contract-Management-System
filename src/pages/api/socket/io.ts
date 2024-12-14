@@ -12,7 +12,7 @@ export const config = {
 type NextApiResponseServerIo = NextApiResponse & {
   socket: Socket & {
     server: NetServer & {
-      io: ServerIO;
+      io?: ServerIO;
     };
   };
 };
@@ -22,16 +22,16 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIo) => {
     const path = "/api/socket/io";
     const httpServer: NetServer = res.socket.server;
     const io = new ServerIO(httpServer, {
-      path: path,
+      path,
     });
     res.socket.server.io = io;
     (globalThis as unknown as { io: ServerIO }).io = io;
+    console.log("Socket.IO server initialized",globalThis);
   } else {
     console.log("Socket.IO server already initialized");
   }
 
   res.end();
-  console.log("API response ended");
 };
 
 export default ioHandler;
