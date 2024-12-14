@@ -50,52 +50,9 @@ async function handleDatabaseError(err: unknown): Promise<NextResponse<APIRespon
 export async function GET(req: NextRequest): Promise<NextResponse<APIResponse>> {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
-
+    try {
     if (id) {
-        return GET_BY_ID(req);
-    }
-
-    try {
-        const contracts = await db.contract.findMany({
-            select: {
-                id: true,
-                clientName: true,
-                title: true,
-                description: true,
-                status: true,
-                type: true
-            }
-        });
-
-        return NextResponse.json(
-            successResponseSchema.parse({
-                success: true,
-                data: { contracts: contracts.length === 0 ? [] : contracts }
-            })
-        );
-    } catch (err) {
-        return handleDatabaseError(err);
-    }
-}
-
-export async function GET_BY_ID(req: NextRequest): Promise<NextResponse<APIResponse>> {
-    try {
-        const { searchParams } = new URL(req.url);
-        const id = searchParams.get('id');
-
-        if (!id) {
-            return NextResponse.json(
-                errorResponseSchema.parse({
-                    success: false,
-                    error: {
-                        message: 'ID is required',
-                        code: 'VALIDATION_ERROR'
-                    }
-                }),
-                { status: 400 }
-            );
-        }
-
+       
         const contract = await db.contract.findUnique({
             where: { id: id as string },
             select: {
@@ -127,10 +84,84 @@ export async function GET_BY_ID(req: NextRequest): Promise<NextResponse<APIRespo
                 data: { contract }
             })
         );
+    }
+
+
+        const contracts = await db.contract.findMany({
+            select: {
+                id: true,
+                clientName: true,
+                title: true,
+                description: true,
+                status: true,
+                type: true
+            }
+        });
+
+        return NextResponse.json(
+            successResponseSchema.parse({
+                success: true,
+                data: { contracts: contracts.length === 0 ? [] : contracts }
+            })
+        );
     } catch (err) {
         return handleDatabaseError(err);
     }
 }
+
+// export async function getById(req: NextRequest): Promise<NextResponse<APIResponse>> {
+//     try {
+//         const { searchParams } = new URL(req.url);
+//         const id = searchParams.get('id');
+
+//         if (!id) {
+//             return NextResponse.json(
+//                 errorResponseSchema.parse({
+//                     success: false,
+//                     error: {
+//                         message: 'ID is required',
+//                         code: 'VALIDATION_ERROR'
+//                     }
+//                 }),
+//                 { status: 400 }
+//             );
+//         }
+
+//         const contract = await db.contract.findUnique({
+//             where: { id: id as string },
+//             select: {
+//                 id: true,
+//                 clientName: true,
+//                 title: true,
+//                 description: true,
+//                 status: true,
+//                 type: true
+//             }
+//         });
+
+//         if (!contract) {
+//             return NextResponse.json(
+//                 errorResponseSchema.parse({
+//                     success: false,
+//                     error: {
+//                         message: 'Contract not found',
+//                         code: 'NOT_FOUND'
+//                     }
+//                 }),
+//                 { status: 404 }
+//             );
+//         }
+
+//         return NextResponse.json(
+//             successResponseSchema.parse({
+//                 success: true,
+//                 data: { contract }
+//             })
+//         );
+//     } catch (err) {
+//         return handleDatabaseError(err);
+//     }
+// }
 
 export async function POST(req: NextRequest): Promise<NextResponse<APIResponse>> {
     try {
