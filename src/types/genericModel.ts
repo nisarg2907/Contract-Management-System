@@ -11,6 +11,12 @@ export const genericDateDTOSchema = genericDateSchema.extend({
     createdAt: z.date().transform(d => d.toISOString()).pipe(z.string().datetime()),
     updatedAt: z.date().transform(d => d.toISOString()).pipe(z.string().datetime())
 });
+export const GenericSelectArraySchema = z.array(z.object({
+    id: z.string(),
+    name: z.string()
+}));
+
+export type GenericSelectArrayType = z.infer<typeof GenericSelectArraySchema>;
 
 // Base response schema with more App Router-friendly structure
 const baseResponseSchema = z.object({
