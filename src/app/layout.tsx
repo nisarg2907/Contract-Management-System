@@ -6,7 +6,7 @@ import NextTopLoader from "nextjs-toploader";
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { SocketProvider } from "@/providers/socket";
 export const metadata = {
-  title: "Contract management",
+  title: "Contract Management",
   description: "Contract Management System",
 };
 import SessionProvider from "@/components/ui/auth/SessionWrapper";
