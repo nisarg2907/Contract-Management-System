@@ -13,7 +13,7 @@ model User {
   name        String
   email       String       @unique
   password    String
-  statuses    ContractStatus[]  // Array of statuses the user wants to be notified about
+  statuses    ContractStatus[]  
   notifications Notification[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt

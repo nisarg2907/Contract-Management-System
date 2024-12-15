@@ -33,7 +33,8 @@ type SidebarItem = {
 const masterList: SidebarItem[] = [
   { title: "Updates", url: "/admin/liveUpdates", icon: FileText },
   { title: "Manage Contracts", url: "/admin", icon: Library },
-  { title: "Manage Users", url: "/admin/user", icon: User2 }
+  { title: "Manage Users", url: "/admin/user", icon: User2 },
+  { title: "Update Settings", url: "/admin/settings", icon: ChevronUp }
 ];
 
 export function AppSidebar() {
