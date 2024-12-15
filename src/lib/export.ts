@@ -61,6 +61,7 @@ export function exportTableToCSV<TData>(
         );
         headers = headers.filter(
             (key) =>
+                key !== "id" &&
                 !excludeColumns.includes(
                     key as keyof TData | "select" | "actions",
                 ),
@@ -73,6 +74,7 @@ export function exportTableToCSV<TData>(
             .map((column) => column.id)
             .filter(
                 (id) =>
+                    id !== "id" &&
                     !excludeColumns.includes(
                         id as keyof TData | "select" | "actions",
                     ),
