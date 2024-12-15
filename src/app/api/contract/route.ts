@@ -173,6 +173,34 @@ export async function POST(
     }
 
     const newContract = await db.contract.create({ data: parsedData });
+    const usersToNotify = await db.user.findMany({
+      where: {
+        statuses: { has: parsedData.status },
+      },
+    });
+
+    const notificationsData = usersToNotify.map((user) => ({
+      userId: user.id,
+      contractId: newContract.id,
+      status: parsedData.status,
+      message: `Contract ${newContract.id} updated to ${parsedData.status}`,
+      isRead: false,
+    }));
+
+    // Create multiple notifications
+    await db.notification.createMany({
+      data: notificationsData,
+    });
+
+    if ((globalThis as unknown as { io: ServerIO }).io) {
+      (globalThis as unknown as { io: ServerIO }).io.emit("contractUpdated", {
+        contractId: newContract.id,
+        status: newContract.status,
+      });
+    } else {
+      console.error("Socket.IO instance is not initialized");
+    }
+
     return NextResponse.json(
       successResponseSchema.parse({
         success: true,
@@ -205,37 +233,43 @@ export async function PUT(
         { status: 400 }
       );
     }
+
+    const existingContract = await db.contract.findUnique({ where: { id } });
     const updatedContract = await db.contract.update({
       where: { id },
       data: parsedData,
     });
-    const usersToNotify = await db.user.findMany({
-      where: {
-        statuses: { has: parsedData.status },
-      },
-    });
 
-    const notificationsData = usersToNotify.map((user) => ({
-      userId: user.id,
-      contractId: id,
-      status: parsedData.status,
-      message: `Contract ${id} updated to ${parsedData.status}`,
-      isRead: false,
-    }));
+    if (existingContract && existingContract.status !== parsedData.status) {
+      const usersToNotify = await db.user.findMany({
+        where: {
+          statuses: { has: parsedData.status },
+        },
+      });
 
-    // Create multiple notifications
-    await db.notification.createMany({
-      data: notificationsData,
-    });
-
-    if ((globalThis as unknown as { io: ServerIO }).io) {
-      (globalThis as unknown as { io: ServerIO }).io.emit("contractUpdated", {
+      const notificationsData = usersToNotify.map((user) => ({
+        userId: user.id,
         contractId: id,
         status: parsedData.status,
+        message: `Contract ${id} updated to ${parsedData.status}`,
+        isRead: false,
+      }));
+
+      // Create multiple notifications
+      await db.notification.createMany({
+        data: notificationsData,
       });
-    } else {
-      console.error("Socket.IO instance is not initialized");
+
+      if ((globalThis as unknown as { io: ServerIO }).io) {
+        (globalThis as unknown as { io: ServerIO }).io.emit("contractUpdated", {
+          contractId: id,
+          status: parsedData.status,
+        });
+      } else {
+        console.error("Socket.IO instance is not initialized");
+      }
     }
+
     return NextResponse.json(
       successResponseSchema.parse({
         success: true,
