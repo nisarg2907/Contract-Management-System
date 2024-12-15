@@ -37,36 +37,36 @@ function useContractGet(
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
+    const fetchContracts = async () => {
+        try {
+            setIsLoading(true);
+            const response = await axios.get("/api/contract", {
+                params: {
+                    page: pagination.pageIndex + 1,
+                    pageSize: pagination.pageSize,
+                    searchQuery,
+                    types: selectedTypes,
+                    statuses: selectedStatuses,
+                },
+            });
+
+            setData(response.data.data.contracts);
+            setRowCount(response.data.data.totalPages || response.data.data.contracts.length);
+        } catch {
+            setError("Error fetching contracts");
+            toast.error("Error fetching contracts");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchContracts = async () => {
-            try {
-                setIsLoading(true);
-                const response = await axios.get("/api/contract", {
-                    params: {
-                        page: pagination.pageIndex + 1,
-                        pageSize: pagination.pageSize,
-                        searchQuery,
-                        types: selectedTypes,
-                        statuses: selectedStatuses,
-                    },
-                });
-
-                setData(response.data.data.contracts);
-                setRowCount(response.data.data.totalPages || response.data.data.contracts.length);
-            } catch{
-                setError("Error fetching contracts");
-                toast.error(
-              "Error fetching contracts",
-                );
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         fetchContracts();
+        
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pagination.pageIndex, pagination.pageSize, searchQuery, selectedTypes, selectedStatuses]);
 
-    return { data, rowCount, isLoading, error };
+    return { data, rowCount, isLoading, error, refetch: fetchContracts };
 }
 
 type cFilterClosureProps = {
@@ -156,26 +156,26 @@ export default function Contracts() {
     const [selectedStatuses, setSelectedStatuses] = useState<ContractStatus[]>([]);
     const { pagination, onPaginationChange } = usePagination();
 
+    const { data, rowCount, refetch } = useContractGet(
+        searchQuery, 
+        selectedTypes, 
+        selectedStatuses, 
+        pagination
+    );
+
     const deleteContract = async (id: string) => {
         try {
             await axios.delete(`/api/contract?id=${id}`);
-            toast("Contract deleted successfully");
-           
+            toast.success("Contract deleted successfully");
+            refetch();
         } catch {
-            toast( "Error deleting contract");
+            toast.error("Error deleting contract");
         }
     };
 
     const handleAddContract = () => {
         router.push('/admin/modify/new');
     };
-
-    const { data, rowCount } = useContractGet(
-        searchQuery, 
-        selectedTypes, 
-        selectedStatuses, 
-        pagination
-    );
 
     const columns: ColumnDef<ContractDataTableRow>[] = [
         {
