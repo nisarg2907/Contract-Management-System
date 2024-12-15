@@ -57,8 +57,7 @@ const authOptions: AuthOptions = {
             email: user.email,
             name: user.name,
           };
-        } catch (error) {
-          console.error("Authentication error:", error);
+        } catch  {
           return null;
         }
       },

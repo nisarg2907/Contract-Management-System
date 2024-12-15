@@ -55,13 +55,11 @@ export default function EditUser() {
 
       try {
         const response = await axios.get(`/api/user?id=${id}`);
-        console.log("user", response.data.data);
         const user =  response.data.data.user;
         const validatedData = UpdateUserSchema.parse(user);
         setData(validatedData);
         form.reset(validatedData);
-      } catch (err){
-        console.log("erro",err)
+      } catch {
         toast.error('Failed to load data.');
       } finally {
         setLoading(false);

@@ -58,7 +58,6 @@ export default function EditContract() {
 
       try {
         const response = await axios.get(`/api/contract?id=${id}`);
-        console.log("response",response.data.data)
         
         const validatedData = CombinedContractSchema.parse(response.data.data.contract);
         setData({...validatedData,id});

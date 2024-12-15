@@ -161,7 +161,6 @@ export async function PUT(req: NextRequest): Promise<NextResponse<APIResponse>> 
         const id = searchParams.get('id') as string;
         const body = await req.json();
         const parsedData = await validateSchema(UpdateUserSchema, body);
-        console.log('parsedData',parsedData)
         if (!parsedData) {
             return NextResponse.json(
                 errorResponseSchema.parse({

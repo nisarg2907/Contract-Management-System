@@ -38,8 +38,7 @@ const UserStatusesForm: React.FC = () => {
                     throw new Error("Failed to update user statuses");
                 }
                 return response.data;
-            } catch (error) {
-                console.error(error);
+            } catch(error)  {
                 toast.error("Failed to update user statuses");
                 throw error;
             }
@@ -49,8 +48,8 @@ const UserStatusesForm: React.FC = () => {
             await updateUserStatuses(selectedStatuses);
             toast.success("User statuses updated successfully");
             await refetch();
-        } catch (error) {
-            console.error(error);
+        } catch  {
+            toast.error('Failed to update preferences');
         } finally {
             setSubmitting(false);
         }

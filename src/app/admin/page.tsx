@@ -3,138 +3,248 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
-import { DataTable } from "@/components/ui/dataTable/dataTable";
+import { CustomFilterComponentProps, DataTable } from "@/components/ui/dataTable/dataTable";
 import { SearchInputGlobalFilter } from "@/components/ui/dataTable/SearchInputGlobalFilter";
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import DropdownActionsMenu from "@/components/ui/dropdownActionMenus";
-import LoadingScreen from "@/components/ui/loadingScreen";
 import { DataTableColumnHeader } from "@/components/ui/dataTable/columnHeader";
 import { toast } from "react-toastify";
 import { ContractDataTableRow } from "@/types/contract";
 import { usePagination } from "@/hooks/use-pagination";
+import { MultiSelect } from "@/components/ui/multiSelect";
+import { ContractStatus, ContractType } from "@prisma/client";
+import { Input } from "@/components/ui/input";
+
+// Helper function to transform enum to select options
+const transformEnumToOptions = <T extends Record<string, string>>(enumObj: T) => 
+    Object.values(enumObj).map((value) => ({
+        label: value,
+        value: value,
+    }));
+
+const ContractStatuses = transformEnumToOptions(ContractStatus);
+const ContractTypes = transformEnumToOptions(ContractType);
+
+function useContractGet(
+    searchQuery: string, 
+    selectedTypes: ContractType[], 
+    selectedStatuses: ContractStatus[], 
+    pagination: PaginationState
+) {
+    const [data, setData] = useState<ContractDataTableRow[]>([]);
+    const [rowCount, setRowCount] = useState<number>(0);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchContracts = async () => {
+            try {
+                setIsLoading(true);
+                const response = await axios.get("/api/contract", {
+                    params: {
+                        page: pagination.pageIndex + 1,
+                        pageSize: pagination.pageSize,
+                        searchQuery,
+                        types: selectedTypes,
+                        statuses: selectedStatuses,
+                    },
+                });
+
+                setData(response.data.data.contracts);
+                setRowCount(response.data.data.totalPages || response.data.data.contracts.length);
+            } catch{
+                setError("Error fetching contracts");
+                toast.error(
+              "Error fetching contracts",
+                );
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchContracts();
+    }, [pagination.pageIndex, pagination.pageSize, searchQuery, selectedTypes, selectedStatuses]);
+
+    return { data, rowCount, isLoading, error };
+}
+
+type cFilterClosureProps = {
+    searchQuery: string;
+    setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+    selectedTypes: ContractType[];
+    setSelectedTypes: React.Dispatch<React.SetStateAction<ContractType[]>>;
+    selectedStatuses: ContractStatus[];
+    setSelectedStatuses: React.Dispatch<React.SetStateAction<ContractStatus[]>>;
+    onAddContract: () => void;
+};
+
+const cFilterClosure = ({
+    searchQuery,
+    setSearchQuery,
+    selectedTypes,
+    setSelectedTypes,
+    selectedStatuses,
+    setSelectedStatuses,
+    onAddContract,
+}: cFilterClosureProps) => {
+    const CFilter: React.FC<CustomFilterComponentProps> = (props) => {
+        const [searchQueryLocal, setSearchQueryLocal] = useState<string>(searchQuery);
+
+        return (
+            <SearchInputGlobalFilter isGlobalFilter={false} {...props}>
+                <>
+                    <div className="flex flex-row items-center w-full gap-4">
+                        <Input
+                            placeholder="Search contracts..."
+                            value={searchQueryLocal}
+                            onChange={(e) => setSearchQueryLocal(e.target.value)}
+                        />
+                        <Button
+                            onClick={() => setSearchQuery(searchQueryLocal)}
+                            variant="secondary"
+                            className="border"
+                            size="default"
+                        >
+                            Search
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                setSearchQuery("");
+                                setSearchQueryLocal("");
+                            }}
+                            variant="secondary"
+                            className="border"
+                            size="default"
+                        >
+                            Reset
+                        </Button>
+                        <MultiSelect
+                            options={ContractStatuses}
+                            placeholder="Select Statuses"
+                            onValueChange={(values) => setSelectedStatuses(values as ContractStatus[])}
+                            defaultValue={selectedStatuses}
+                            maxCount={5}
+                        />
+                        <MultiSelect
+                            options={ContractTypes}
+                            placeholder="Select Types"
+                            onValueChange={(values) => setSelectedTypes(values as ContractType[])}
+                            defaultValue={selectedTypes}
+                            maxCount={5}
+                        />
+                        <Button
+                            onClick={onAddContract}
+                            variant="secondary"
+                            className="border"
+                            size="default"
+                        >
+                            Add 
+                        </Button>
+                    </div>
+                </>
+            </SearchInputGlobalFilter>
+        );
+    };
+    return CFilter;
+};
 
 export default function Contracts() {
-  const [data, setData] = useState<ContractDataTableRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-  const { pagination, onPaginationChange } = usePagination();
-  const [totalPageCount, setTotalPageCount] = useState<number>(0);
+    const router = useRouter();
+    const [searchQuery, setSearchQuery] = useState<string>('');
+    const [selectedTypes, setSelectedTypes] = useState<ContractType[]>([]);
+    const [selectedStatuses, setSelectedStatuses] = useState<ContractStatus[]>([]);
+    const { pagination, onPaginationChange } = usePagination();
 
-  useEffect(() => {
-    const fetchContracts = async () => {
-      try {
-        const response = await axios.get("/api/contract", {
-          params: {
-            pageIndex: pagination.pageIndex,
-            pageSize: pagination.pageSize,
-          },
-        });
-        setData(response.data.data.contracts);
-        setTotalPageCount(response.data.data.totalPages);
-      } catch {
-        setError("Error fetching contracts");
-        toast.error("Error fetching contracts");
-      } finally {
-        setLoading(false);
-      }
+    const deleteContract = async (id: string) => {
+        try {
+            await axios.delete(`/api/contract?id=${id}`);
+            toast("Contract deleted successfully");
+           
+        } catch {
+            toast( "Error deleting contract");
+        }
     };
 
-    fetchContracts();
-  }, [pagination.pageIndex, pagination.pageSize]);
+    const handleAddContract = () => {
+        router.push('/admin/modify/new');
+    };
 
-  const deleteContract = async (id: string) => {
-    try {
-      await axios.delete(`/api/contract?id=${id}`);
-      toast.success(`Contract deleted successfully`);
-      setData((prevData) => prevData.filter((contract) => contract.id !== id));
-    } catch {
-      toast.error("Error deleting contract");
-    }
-  };
+    const { data, rowCount } = useContractGet(
+        searchQuery, 
+        selectedTypes, 
+        selectedStatuses, 
+        pagination
+    );
 
-  const columns: ColumnDef<ContractDataTableRow>[] = [
-    {
-      id: "index",
-      header: "No.",
-      cell: (info) => info.row.index + 1,
-    },
-    {
-      accessorKey: "title",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Title" />
-      ),
-    },
-    {
-      accessorKey: "clientName",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Client Name" />
-      ),
-    },
-    {
-      accessorKey: "status",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Status" />
-      ),
-    },
-    {
-      accessorKey: "type",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Type" />
-      ),
-    },
-    {
-      id: "actions",
-      cell: ({ row }) => {
-        const contract = row.original;
-        const actions = [
-          {
-            name: "Delete",
-            onClick: () => deleteContract(contract.id),
-            requiresConfirmation: true,
-          },
-          {
-            name: "Edit",
-            onClick: () => router.push(`/admin/modify/${contract.id}`),
-          },
-        ];
-        return <DropdownActionsMenu actions={actions} />;
-      },
-    },
-  ];
+    const columns: ColumnDef<ContractDataTableRow>[] = [
+        {
+            id: "index",
+            header: "No.",
+            cell: (info) => info.row.index + 1,
+        },
+        {
+            accessorKey: "title",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Title" />
+            ),
+        },
+        {
+            accessorKey: "clientName",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Client Name" />
+            ),
+        },
+        {
+            accessorKey: "status",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Status" />
+            ),
+        },
+        {
+            accessorKey: "type",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Type" />
+            ),
+        },
+        {
+            id: "actions",
+            cell: ({ row }) => {
+                const contract = row.original;
+                const actions = [
+                    {
+                        name: "Delete",
+                        onClick: () => deleteContract(contract.id),
+                        requiresConfirmation: true,
+                    },
+                    {
+                        name: "Edit",
+                        onClick: () => router.push(`/admin/modify/${contract.id}`),
+                    },
+                ];
+                return <DropdownActionsMenu actions={actions} />;
+            },
+        },
+    ];
 
-  if (loading) {
-    return <LoadingScreen className="h-full w-full min-h-screen" />;
-  }
-
-  if (error) {
-    return null;
-  }
-
-  return (
-    <div className="m-8 p-12">
-      <DataTable
-        columns={columns}
-        data={data}
-        CustomFilterComponent={({ globalFilter, setGlobalFilter }) => (
-          <SearchInputGlobalFilter
-            globalFilter={globalFilter}
-            setGlobalFilter={setGlobalFilter}
-          >
-            <Button
-              onClick={() => router.push(`/admin/modify/new`)}
-              variant="secondary"
-              className="border"
-            >
-              Add
-            </Button>
-          </SearchInputGlobalFilter>
-        )}
-        pagination={pagination}
-        onPaginationChange={onPaginationChange}
-        totalRows={totalPageCount * pagination.pageSize}
-      />
-    </div>
-  );
+    return (
+        <div className="p-4 m-4">
+            <DataTable
+                columns={columns}
+                data={data}
+                pagination={pagination}
+                totalRows={rowCount}
+                onPaginationChange={onPaginationChange}
+                CustomFilterComponent={cFilterClosure({
+                    searchQuery,
+                    setSearchQuery,
+                    selectedTypes,
+                    setSelectedTypes,
+                    selectedStatuses,
+                    setSelectedStatuses,
+                    onAddContract: handleAddContract,
+                })}
+            />
+        </div>
+    );
 }

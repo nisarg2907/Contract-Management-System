@@ -11,8 +11,6 @@ export default function UpdatesPage() {
     markNotificationsAsRead 
   } = useNotifications();
  
-  console.log("notifications", notifications);
-
   useEffect(() => {
     const unreadNotifications = notifications.filter(n => !n.isRead);
     const notificationIds = unreadNotifications.map(n => n.id);

@@ -26,7 +26,6 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIo) => {
     });
     res.socket.server.io = io;
     (globalThis as unknown as { io: ServerIO }).io = io;
-    console.log("Socket.IO server initialized",globalThis);
   } else {
     console.log("Socket.IO server already initialized");
   }
