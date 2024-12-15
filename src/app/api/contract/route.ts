@@ -172,6 +172,25 @@ export async function PUT(req: NextRequest): Promise<NextResponse<APIResponse>> 
             where: { id },
             data: parsedData,
         });
+        const usersToNotify = await db.user.findMany({
+            where: { 
+                statuses: { has: parsedData.status }
+            }
+        });
+
+        const notificationsData = usersToNotify.map(user => ({
+            userId: user.id,
+            contractId: id,
+            status: parsedData.status,
+            message: `Contract ${id} updated to ${parsedData.status}`,
+            isRead: false
+        }));
+
+        // Create multiple notifications
+        await db.notification.createMany({
+            data: notificationsData
+        });
+
         if ((globalThis as unknown as { io: ServerIO }).io) {
             (globalThis as unknown as { io: ServerIO }).io.emit('contractUpdated', {
               contractId: id,

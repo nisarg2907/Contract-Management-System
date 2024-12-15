@@ -23,6 +23,8 @@ import { SocketIndicator } from "@/components/ui/show-notification";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "./dropDownMenu";
 import { useSession, signOut } from "next-auth/react";
+import { useNotifications } from "@/hooks/use-notifications";
+import { Badge } from "./badge";
 
 type SidebarItem = {
   title: string;
@@ -41,7 +43,7 @@ export function AppSidebar() {
   const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
   const { data: session } = useSession();
-
+  const { unreadCount } = useNotifications();
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -59,23 +61,35 @@ export function AppSidebar() {
         <SidebarGroup>
           <div className="text-xl font-bold m-4 p-2">Manage Contracts</div>
           <SidebarMenu className='ml-2'>
-            {masterList.map((masterItem) => (
-              <div key={masterItem.title} className="mb-2">
-                <Link 
-                  href={masterItem.url || '#'} 
-                  className={cn(
-                    "flex items-center w-full gap-2 p-2",
-                    "hover:bg-accent hover:text-accent-foreground",
-                    pathname?.startsWith(masterItem.url ?? "") && "bg-accent text-accent-foreground"
+        {masterList.map((masterItem) => (
+          <div key={masterItem.title} className="mb-2">
+            <Link 
+              href={masterItem.url || '#'} 
+              className={cn(
+                "flex items-center w-full gap-2 p-2",
+                "hover:bg-accent hover:text-accent-foreground",
+                pathname?.startsWith(masterItem.url ?? "") && "bg-accent text-accent-foreground"
+              )}
+            >
+              <masterItem.icon />
+              <span>{masterItem.title}</span>
+              {masterItem.url === "/admin/liveUpdates" && (
+                <>
+                  <SocketIndicator />
+                  {unreadCount > 0 && (
+                    <Badge
+                      variant="destructive" 
+                      className="ml-2"
+                    >
+                      {unreadCount === 9 ? '9+' : unreadCount}
+                    </Badge>
                   )}
-                >
-                  <masterItem.icon />
-                  <span>{masterItem.title}</span>
-                  {masterItem.url === "/admin/liveUpdates" && <SocketIndicator />}
-                </Link>
-              </div>
-            ))}
-          </SidebarMenu>
+                </>
+              )}
+            </Link>
+          </div>
+        ))}
+      </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
       

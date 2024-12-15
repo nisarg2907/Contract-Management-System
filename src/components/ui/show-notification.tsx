@@ -12,14 +12,20 @@ interface ContractUpdate {
 
 export const SocketIndicator = () => {
   const { isConnected, socket } = useSocket();
-  const [hasNewUpdates, setHasNewUpdates] = useState(false);
+  const [newUpdatesCount, setNewUpdatesCount] = useState(() => {
+    const storedCount = localStorage.getItem('newUpdatesCount');
+    return storedCount ? parseInt(storedCount, 10) : 0;
+  });
   const { statuses } = useUserStatuses();
 
   useEffect(() => {
     if (socket) {
       socket.on("contractUpdated", async (res: ContractUpdate) => {
-        const updatedStatuses = statuses.includes(res.status)
-        setHasNewUpdates(updatedStatuses);
+        if (statuses.includes(res.status)) {
+          const newCount = Math.min((newUpdatesCount || 0) + 1, 9);
+          setNewUpdatesCount(newCount);
+          localStorage.setItem('newUpdatesCount', newCount.toString());
+        }
       });
     }
 
@@ -28,20 +34,25 @@ export const SocketIndicator = () => {
         socket.off("contractUpdated");
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, statuses]);
 
-  if (!isConnected) {
-    return <></>;
+  const clearUpdates = () => {
+    setNewUpdatesCount(0);
+    localStorage.removeItem('newUpdatesCount');
+  };
+
+  if (!isConnected || newUpdatesCount === 0) {
+    return null;
   }
 
   return (
-    hasNewUpdates && (
-      <Badge 
-        variant="outline" 
-        className={`bg-emerald-600 text-white border-none ${hasNewUpdates ? "animate-pulse" : ""}`}
-      >
-        <span className="animate-pulse">New Updates</span>
-      </Badge>
-    )
+    <Badge 
+      variant="destructive"
+      className="animate-pulse ml-2"
+      onClick={clearUpdates}
+    >
+      {newUpdatesCount === 9 ? '9+' : newUpdatesCount}
+    </Badge>
   );
 }
