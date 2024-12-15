@@ -57,8 +57,8 @@ const UserStatusesForm: React.FC = () => {
 
     return (
         <Card className="m-4 p-4">
-            <CardHeader>
-                <CardTitle>Select Contract Statuses to be notified upon</CardTitle>
+            <CardHeader className='mb-2'>
+                <CardTitle className="text-2xl text-center">Select the contract statuses for which you would like to receive notifications</CardTitle>
             </CardHeader>
             <CardContent>
                 {loading ? (

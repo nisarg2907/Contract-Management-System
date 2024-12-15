@@ -1,7 +1,7 @@
 "use client"
 import { 
   ChevronUp,
-  FileText, Library, User2
+  FileText, Library, Settings, User2
 } from "lucide-react"
 
 import Link from 'next/link';
@@ -33,10 +33,10 @@ type SidebarItem = {
 };
 
 const masterList: SidebarItem[] = [
-  { title: "Updates", url: "/admin/liveUpdates", icon: FileText },
-  { title: "Manage Contracts", url: "/admin", icon: Library },
+  { title: "Live Contract Updates", url: "/admin/liveUpdates", icon: FileText },
+  { title: "Manage All Contracts", url: "/admin", icon: Library },
   { title: "Manage Users", url: "/admin/user", icon: User2 },
-  { title: "Update Settings", url: "/admin/settings", icon: ChevronUp }
+  { title: "Notification Settings", url: "/admin/settings", icon: Settings }
 ];
 
 export function AppSidebar() {
@@ -59,7 +59,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <div className="text-xl font-bold m-4 p-2">Manage Contracts</div>
+          <div className="text-2xl text-center font-bold m-4 p-2">CMS</div>
           <SidebarMenu className='ml-2'>
         {masterList.map((masterItem) => (
           <div key={masterItem.title} className="mb-2">
