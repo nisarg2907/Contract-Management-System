@@ -78,8 +78,12 @@ export default function EditUser() {
 
       toast.success('Form submitted successfully');
       router.push('/admin/user');
-    } catch {
-      toast.error('Failed to submit User.');
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        toast.error(error.response.data.error.message);
+      } else {
+        toast.error("An unexpected error occurred.");
+      }
     } finally {
       setIsSubmitting(false);
     }
