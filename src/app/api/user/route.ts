@@ -212,7 +212,7 @@ export async function DELETE(req: NextRequest): Promise<NextResponse<APIResponse
                 { status: 400 }
             );
         }
-        
+        await db.notification.deleteMany({where:{userId:id}})
         await db.user.delete({ where: { id } });
         return NextResponse.json(
             successResponseSchema.parse({

@@ -300,7 +300,7 @@ export async function DELETE(
         { status: 400 }
       );
     }
-
+    await db.notification.deleteMany({where:{contractId:id}});
     await db.contract.delete({ where: { id } });
     return NextResponse.json(
       successResponseSchema.parse({
