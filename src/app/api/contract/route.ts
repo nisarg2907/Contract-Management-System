@@ -63,7 +63,7 @@ export async function GET(
 ): Promise<NextResponse<APIResponse>> {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
-  const pageIndex = parseInt(searchParams.get("pageIndex") || "0", 10);
+  const pageIndex = parseInt(searchParams.get("page") || "0", 10)-1;
   const pageSize = parseInt(searchParams.get("pageSize") || "10", 10);
   const searchQuery = searchParams.get("searchQuery") || "";
   const types = searchParams.getAll("types[]");
@@ -121,7 +121,6 @@ export async function GET(
     if (statuses.length > 0) {
       whereClause.status = { in: statuses };
     }
-
     const totalContracts = await db.contract.count({ where: whereClause });
 
     const contracts = await db.contract.findMany({
@@ -137,7 +136,7 @@ export async function GET(
         type: true,
       },
     });
-
+  
     return NextResponse.json(
       successResponseSchema.parse({
         success: true,
