@@ -1,11 +1,12 @@
 'use client'
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MultiSelect } from "@/components/ui/multiSelect";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ContractStatus } from "@prisma/client";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { useUserStatuses } from "@/hooks/use-user-statuses";
 import { useSession } from "next-auth/react";
 
 const statusesOptions = [
@@ -16,50 +17,16 @@ const statusesOptions = [
 ];
 
 const UserStatusesForm: React.FC = () => {
+    const { statuses, loading, refetch } = useUserStatuses();
     const [selectedStatuses, setSelectedStatuses] = useState<ContractStatus[]>([]);
-    const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
-    const session = useSession();
-    const id = session?.data?.user?.id;
+    const id = useSession().data?.user.id;
 
     useEffect(() => {
-        const fetchUserStatuses = async () => {
-            if (!id) {
-                console.log("User ID not available yet");
-                return;
-            }
-            try {
-                console.log("id", id);
-                const response = await axios.get('/api/user/status', { params: { id } });
-                if (response.status !== 200) {
-                    throw new Error("Failed to fetch user statuses");
-                }
-                console.log(response)
-                return response.data.data;
-            } catch (error) {
-                toast.error("Failed to fetch user statuses");
-                throw error;
-            }
-        };
-
-        const loadUserStatuses = async () => {
-            try {
-                const userStatuses = await fetchUserStatuses();
-                if (userStatuses) {
-                    setSelectedStatuses(userStatuses);
-                }
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (id) {
-            console.log("there is id",id)
-            loadUserStatuses();
+        if (statuses.length > 0) {
+            setSelectedStatuses(statuses);
         }
-    }, [id]);
+    }, [statuses]);
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -81,6 +48,7 @@ const UserStatusesForm: React.FC = () => {
         try {
             await updateUserStatuses(selectedStatuses);
             toast.success("User statuses updated successfully");
+            await refetch();
         } catch (error) {
             console.error(error);
         } finally {

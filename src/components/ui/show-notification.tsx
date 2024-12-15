@@ -2,16 +2,24 @@
 import { useSocket } from "@/providers/socket";
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
+import { useUserStatuses } from "@/hooks/use-user-statuses";
+import { ContractStatus } from "@prisma/client";
+
+interface ContractUpdate {
+  id: string;
+  status: ContractStatus;
+}
 
 export const SocketIndicator = () => {
   const { isConnected, socket } = useSocket();
   const [hasNewUpdates, setHasNewUpdates] = useState(false);
+  const { statuses } = useUserStatuses();
 
   useEffect(() => {
     if (socket) {
-      socket.on("contractUpdated", (res) => {
-        console.log("res",res)
-        setHasNewUpdates(true);
+      socket.on("contractUpdated", async (res: ContractUpdate) => {
+        const updatedStatuses = statuses.includes(res.status)
+        setHasNewUpdates(updatedStatuses);
       });
     }
 
@@ -20,10 +28,10 @@ export const SocketIndicator = () => {
         socket.off("contractUpdated");
       }
     };
-  }, [socket]);
+  }, [socket, statuses]);
 
   if (!isConnected) {
-    return <></>
+    return <></>;
   }
 
   return (
@@ -35,5 +43,5 @@ export const SocketIndicator = () => {
         <span className="animate-pulse">New Updates</span>
       </Badge>
     )
-  )
+  );
 }
